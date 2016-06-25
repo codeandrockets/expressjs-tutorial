@@ -9,7 +9,13 @@ var handlebars = require('express-handlebars').create({defaultLayout:'main'});
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-//More Imports Here
+app.use(require('body-parser').urlencoded({
+	extended: true}));
+
+var formidable = require('formidable');
+
+var credentials = require('./credentials.js');
+app.use(require('cookie-parser')(credentials.cookieSecret));
 
 app.set('port', process.env.PORT || 3000);
 
@@ -21,6 +27,22 @@ app.get('/', function(req, res){
 
 app.get('/about', function(req, res){
 	res.render('about');
+});
+
+app.get('/contact', function(req, res){
+	res.render('contact', {csrf: 'CSRF token here'});
+});
+
+app.get('/thankyou', function(req, res){
+	res.render('thankyou');
+});
+
+app.post('/process', function(req,res){
+	console.log('Form :' + req.query.form);
+	console.log('CSRF token : ' + req.body._csrf);
+	console.log('Email : ' + req.body.email);
+	console.log('Question : ' + req.body.ques);
+	res.redirect(303, '/thankyou');
 });
 
 app.use(function(req, res){
@@ -48,6 +70,22 @@ app.get('/junk', function(req, res, next){
 app.use(function(err, req, res, next){
 	console.log('Error : ' + err.message);
 	next();
+});
+
+app.get('/contact', function(req, res){
+	res.render('contact', {csrf: 'CSRF token here'});
+});
+
+app.get('/thankyou', function(req, res){
+	res.render('thankyou');
+});
+
+app.post('/process', function(req,res){
+	console.log('Form :' + req.query.form);
+	console.log('CSRF token : ' + req.body._csrf);
+	console.log('Email : ' + req.body.email);
+	console.log('Question : ' + req.body.ques);
+	res.redirect(303, '/thankyou');
 });
 
 app.listen(app.get('port'), function(){
