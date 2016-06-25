@@ -37,12 +37,101 @@ app.get('/thankyou', function(req, res){
 	res.render('thankyou');
 });
 
+app.get('/cookie', function(req, res){
+	res.cookie('username', 'Steven Jasionowicz', {expire: new Date() + 9999}).send('username has the value of Steven Jasionowicz'); 
+});
+
+app.get('/listcookies', function(req, res){
+	console.log("Cookies : ", req.cookies);
+	res.send('Look in the console for cookies');
+});
+
+app.get('/deletecookie', function(req, res){
+	res.clearCookie('username');
+	res.send('username Cookie deleted');
+});
+
+var session = require('express-session');
+
+var parseurl = require('parseurl');
+
+app.use(session({
+	resave: false, 
+	saveUninitialized: true,
+	secret: credentials.cookieSecret,
+}));
+
+app.use(function(req, res, next){
+	var views = req.session.views;
+
+	if(!views){
+		views = req.session.views = {};
+	}
+
+	var pathname = parseurl(req).pathname;
+
+	views[pathname] = (views[pathname] || 0) + 1;
+
+	next();
+});
+
+app.get('/viewcount', function(req, res, next){
+	res.send('You viewed this page ' + req.session.views['/viewcount'] + ' times');
+});
+
 app.post('/process', function(req,res){
 	console.log('Form :' + req.query.form);
 	console.log('CSRF token : ' + req.body._csrf);
 	console.log('Email : ' + req.body.email);
 	console.log('Question : ' + req.body.ques);
 	res.redirect(303, '/thankyou');
+});
+
+app.get('/file-upload', function(req, res){
+	var now = new Date();
+	res.render('fileupload', {
+		year: now.getFullYear(),
+		month: now.getMonth() 
+	});
+});
+
+app.post('/file-upload/:year/:month',
+	function(req, res){
+		var form = new formidable.IncomingForm();
+		form.parse(req, function(err, fields, file){
+			if(err)
+				return res.redirect(303, '/error');
+			console.log('Recieved File');
+
+			console.log(file);
+			res.redirect(303, '/thankyou');
+		});
+	});
+
+var fs = require("fs");
+
+app.get('/readfile', function(req, res, next){
+	fs.readFile('./public/randomfile.txt', function(err, data){
+		if(err){
+			return console.error(err);
+		}
+		res.send("the File :" + data.toString());
+	});
+});
+
+app.get('/writefile', function(req, res, next){
+	fs.writeFile('./public/randomfile2.txt', 'More random text', function(err){
+		if(err) {
+			return console.error(err);
+		}
+	});
+	fs.readFile('./public/randomfile2.txt', 
+		function(err, data){
+			if(err){
+				return console.error(err);
+			}
+			res.send("The File " + data.toString());
+		});
 });
 
 app.use(function(req, res){
